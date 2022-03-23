@@ -1,0 +1,16 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "",
+  "scripts": {
+    "lint": "eslint src  --fix --ext .vue --ext .js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tencent/eslint-config-tencent": "^0.12.2",
+    "eslint": "^7.14.0",
+    "eslint-plugin-vue": "^7.1.0"
+  }
+}

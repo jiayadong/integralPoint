@@ -1,0 +1,472 @@
+syntax = "proto3";
+package trpc.knocknock.authcenter;
+import "google/protobuf/timestamp.proto";
+import "trpc/api/annotations.proto";
+
+option go_package="git.code.oa.com/trpcprotocol/knocknock/authcenter";
+
+// 仅供前台服务调用
+service AuthCenterAdmin {
+  //=================================================以下接口给web前台调用
+  // 创建服务
+  rpc RegistServer(RegistServerRequest) returns(RegistServerResponse);
+  // 删除服务
+  rpc DeleteServer(DelServerRequest) returns(DelServerResponse);
+  // 更新服务
+  rpc UpdateServer(UpdateServerRequest) returns(UpdateServerResponse);
+  // 查询服务
+  rpc GetServer(GetServerInfoRequest) returns(GetServerInfoResponse);
+  // 增加service
+  rpc AddService(AddServiceRequest) returns(AddServiceResponse);
+  // 删除service
+  rpc DeleteService(DeleteServiceRequest) returns(DeleteServiceResponse);
+  // 更新service
+  rpc UpdateService(UpdateServiceRequest) returns(UpdateServiceResponse);
+  // 查询service
+  rpc GetService(GetServiceInfoRequest) returns(GetServiceInfoResponse);
+  // 查询授权
+  rpc GetAuthInfo(GetAuthRequest) returns(GetAuthResponse);
+  // 删除授权
+  rpc CancelAuth(CancelAuthRequest) returns(CancelAuthResponse);
+  // 新增权限申请流程
+  rpc AddAuthApplyFlow(AddAuthApplyFlowRequest) returns(AddAuthApplyResponse);
+  // 更新流程状态
+  rpc UpdateFlowStatus(UpdateFlowStatusRequest) returns(UpdateFlowStatusResponse);
+  // 查询流程
+  rpc GetAuthApplyFlow(GetAuthApplyFlowRequest) returns(GetAuthFlowResponse);
+  // 查询操作日志
+  rpc GetOperateLog(GetOperateLogRequest) returns(GetOperateLogResponse);
+  // 主动授权权限
+  rpc GrantAuth(GrantAuthRequest) returns(GrantAuthResponse);
+}
+
+// 供后台服务调用
+service AuthCenter {
+  // 主调获取授权信息
+  rpc GetAuthInfo(GetAuthInfoRequest) returns(GetAuthInfoResponse) {
+    option (trpc.api.http) = {
+      post: "/authinfos"
+      body: "*"
+    };
+  };
+  // 被调获取ACL
+  rpc GetACL(GetACLRequest) returns(GetACLResponse) {
+    option (trpc.api.http) = {
+      post: "/acl"
+      body: "*"
+    };
+  };
+}
+
+// 注册server请求
+message RegistServerRequest {
+  Server  server    =   1;  // 服务信息
+  string  operator  =   2;  // 操作人
+}
+
+// 注册服务返回结果
+message RegistServerResponse {
+  RetCode retCode   = 1; // 返回码，0表示成功，非0为相应的错误码
+  string msg        = 2; // 如果调用失败，该字段可以传出错误原因
+  string serverId     = 3;  // server id, server注册成功后，返回给用户
+  string serverPass   = 4;  // server pass, server注册成功后，返回给用户
+}
+
+// 删除server请求
+message DelServerRequest {
+  string serverId = 1;    // server id
+  string operator = 2;   //操作人
+}
+
+// 删除服务返回结果
+message DelServerResponse {
+  RetCode retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string msg      = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 更新服务
+message UpdateServerRequest {
+  string    serverId  = 1; // server id
+  string    annotation  = 2;       // 备注信息，最大长度256字节
+  repeated  string  administrators = 3;   // 服务管理员
+  string    operator     = 4; //  本次操作的操作人
+}
+
+// 更新服务返回结果
+message UpdateServerResponse {
+  RetCode  retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string   msg      = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 增加service请求
+message AddServiceRequest {
+  string   serverId = 1 ;//server item
+  repeated Service services = 2; // service 信息
+  string operator           = 3; // 操作人
+}
+
+// 增加service返回结果
+message AddServiceResponse {
+  RetCode  retCode  = 1; // 返回码，0表示成功，非0为相应的错误码
+  string   msg      = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 删除service
+message DeleteServiceRequest {
+  string   serverId = 1 ;//server item
+  repeated string serviceId = 2; // service id
+  string          operator      = 3; // 操作人
+}
+
+// 删除service返回结果
+message DeleteServiceResponse {
+  RetCode  retCode  = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg       = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 更新指定service
+message UpdateServiceRequest {
+  string    serverId = 1 ;//server item
+  repeated  Service services = 2; // 更新后的service信息
+  string    operator         = 3; // 操作人
+}
+
+// 更新Service返回结果
+message UpdateServiceResponse {
+  RetCode  retCode  = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg       = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 新增授权
+message GrantAuthRequest {
+  AuthItem authItem = 1;   // 授权条目
+  string authorizer = 2;
+  bool isVerifyIP = 3;
+}
+
+// 新增授权返回结果
+message GrantAuthResponse {
+  RetCode  retCode  = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg       = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 查询授权
+message GetAuthRequest {
+  string    callerServerId = 1;   // 主调server id, 被调服务查询所有授权时，无需填写该字段
+  string    calleeServerId = 2;   // 被调server id, 主调服务查询所有授权信息时，无需填写该字段
+  string    calleeServiceId = 3;  // 被调serice id, 查询被调该service下的授权情况, 不填写代表查询被调所有service
+  repeated string methodId  = 4;  // 被调方法名, 该字段如果不填，代表查询所有所有method的授权情况
+  uint32    pageIndex = 5; // 查询第几页，从1开始。如果无需分页或者查询所有，该字段可以不填，或者填0
+  uint32    numOnePage = 6; // 每页显示的条目数。如果无需分页或者查询所有，该字段不填，或者填0
+}
+
+//查询授权的返回列表
+message GetAuthResponse {
+  repeated AuthItem authItem= 1;
+  RetCode  retCode  = 2; // 返回码，0表示成功，非0为相应的错误码
+  string  msg       = 3; // 如果调用失败，该字段可以传出错误原因
+  uint32  totalNum = 4; // 返回条目数
+}
+
+// 取消授权
+message CancelAuthRequest {
+  string   calleeServerId = 1;    //被调server id
+  string   calleeServiceId = 2;   //被调serice id
+  repeated string calleeMethodIds = 3;  // 被调方法，选填，如果不填代表取消service粒度的授权
+  string  callerServerId = 4;     // 主调serverId
+  string  operator  = 5;      // 操作人
+}
+
+// 新增授权返回结果
+message CancelAuthResponse {
+  RetCode  retCode  = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg       = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 查询server信息
+message GetServerInfoRequest {
+  string  serverId = 1;    //被调server id
+  string  serverName = 2;  // 服务名，后续支持模糊搜索
+  string  administrator   = 3;  // 负责人，如果不填，则忽略此匹配项
+  bool    isVerbose  = 4;  // 是否显示详细信息
+  string  operator    = 5;  // 操作人，根据操作人判断，某些信息不返回，例如非服务负责人，在返回服务信息时，不会带上serverPass
+  uint32  pageIndex = 6; // 查询第几页，从1开始。如果无需分页或者查询所有，该字段可以不填，或者填0
+  uint32  numOnePage = 7; // 每页显示的条目数。如果无需分页或者查询所有，该字段不填，或者填0
+}
+
+// 查询服务信息返回
+message GetServerInfoResponse {
+  RetCode  retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg      = 2; // 如果调用失败，该字段可以传出错误原因
+  repeated Server servers = 3; // 服务信息
+  uint32  totalNum = 4; // 返回条目数 
+}
+
+// 查询service信息
+message GetServiceInfoRequest {
+  string   serverId = 1;    //server id
+  string   serviceId = 2;   //service id
+  string   operator    =  3;  // 操作人，根据操作人判断，某些信息不返回
+  uint32   pageIndex = 4; // 查询第几页，从1开始。如果无需分页或者查询所有，该字段可以不填，或者填0
+  uint32   numOnePage = 5; // 每页显示的条目数。如果无需分页或者查询所有，该字段不填，或者填0
+}
+
+// 查询service返回结果
+message GetServiceInfoResponse {
+  RetCode  retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string   msg     = 2; // 如果调用失败，该字段可以传出错误原因
+  repeated Service serviceInfo = 3; // service信息
+  uint32   totalNum = 4; // 返回条目数
+}
+
+//权限状态
+enum AuthStatus {
+  // 无效状态
+  AUTH_INVALID = 0;
+  //有权限
+  AUTH_AVAILABLE = 1 ;
+  //无权限
+  AUTH_UNAVAILABLE = 2;
+  //权限申请中
+  AUTH_VALID = 3;
+}
+
+// 权限申请流程状态
+enum AuthFlowStatus {
+  // 无效状态
+  AUTH_FLOW_INVALID = 0;
+  // 流程申请中
+  AUTH_FLOW_APPLYING  = 1;
+  // 流程通过
+  AUTH_FLOW_PASS      = 2;
+  // 流程已拒绝
+  AUTH_FLOW_REJECTED    = 3;
+  // 流程已取消
+  AUTH_FLOW_CANCEL   = 4;
+}
+
+message MethodIdentity {
+  string methodId = 1;   // method id
+  string methodName = 2; // method 名字
+}
+
+// 权限申请流程
+message AuthApplyFlow {
+  string flowId =  1;           // 流程id, 该流程id由后台生成，最大长度256字节，做为流程的唯一索引
+  string callerServerId = 2;    // 主调服务id
+  string callerServerName = 3;  // 主调服务名, 申请权限时可不填
+  string calleeServerId = 4;    // 被调服务id
+  string calleeServerName = 5;  // 被调服务名, 申请权限时可不填
+  string calleeServiceId = 6;   // 被调service id
+  string calleeServiceName = 7; // 被调service name
+  repeated MethodIdentity calleeMethods = 8;  // 被调方法，选填，如果不填代表取消service粒度的授权
+  string applyRemark = 9;                      // 申请时填的备注信息，申请人针对本次申请的简单描述,最大256字节
+  string applicant = 10;                         // 申请人
+  string approveRemark = 11;                    // 审批时的备注信息，添加申请流程时无需填写，可选，最大256字节
+  string applyTime = 12;     // 申请时间,该字段主要用于查询时在前台显示，添加流程时无需填写，后台自动生成
+  string approveTime = 13;   // 申批时间,该字段主要用于查询时在前台显示，添加流程时无需填写，后台自动生成
+  AuthFlowStatus flowStatus = 14;                      // 状态，新流程添加时为AUTH_STATUS_APPLYING
+  bool isVerifyIP = 15;      // 是否验证北极星IP
+}
+
+// 添加权限申请流程
+message AddAuthApplyFlowRequest {
+  AuthApplyFlow flow  = 1;         // 申请流程
+}
+
+// 添加权限申请流程结果
+message AddAuthApplyResponse {
+  RetCode  retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg      = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 修改流程状态（主调主动cancel、被调pass/reject）
+message UpdateFlowStatusRequest {
+  string flowId = 1;     // 流程id
+  AuthFlowStatus flowStatus = 2;  // 流程状态
+  string operator = 3;    // 操作人
+  string approveAnnotations = 4; // 审批时备注信息，最长256字节
+}
+
+message UpdateFlowStatusResponse{
+  RetCode  retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg      = 2; // 如果调用失败，该字段可以传出错误原因
+}
+
+// 获取权限申请流程请求
+message GetAuthApplyFlowRequest {
+  string flowId = 1;            // 流程id
+  string callerServerId = 2;    //主调server id
+  string calleeServerId = 3;    //被调server id
+  string applicant = 4;         // 权限申请人，用于过滤该申请人发起的申请流程
+  string approver  = 5;         // 审批者，用于过滤该审批者审批过的申请流程
+  string administrator = 6;     // 管理者，用于过滤该管理者管理的server作为被调的申请流程
+  string startTime = 7;         // 流程创建起始时间，用于根据时间段过滤订单
+  string endTime = 8;           // 流程创建结束时间，用于根据时间段过滤订单
+  AuthFlowStatus flowStatus = 9;                // 流程状态
+  string operator = 10;                         // 操作者，这里指查询人
+  uint32 pageIndex = 11; // 查询第几页，从1开始。如果无需分页或者查询所有，该字段可以不填，或者填0
+  uint32 numOnePage = 12; // 每页显示的条目数。如果无需分页或者查询所有，该字段不填，或者填0
+}
+// 获取流程信息应答
+message GetAuthFlowResponse {
+  RetCode  retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string   msg     = 2; // 如果调用失败，该字段可以传出错误原因
+  repeated AuthApplyFlow flows = 3; // 权限申请流程
+  uint32   totalNum = 4; // 返回条目数
+}
+
+
+message Token {
+  string token = 1;   // token
+  uint32 version = 2; // 版本号
+}
+
+// 方法
+message Methods {
+  string serviceName = 1;  // service名
+  repeated string method = 2; // 方法名
+}
+
+message ServerAuthInfo {
+  string calleeServerID = 1;   // 授权的被调服ID
+  repeated string servicesName = 2; // 授权的Service名称
+  Token token = 3;                  // token
+  repeated Methods methods = 4; // 授权的方法
+}
+
+// 主调获取授权信息
+message GetAuthInfoRequest {
+  string callerServerId   = 1;  // 主调 server id
+  string callerServerPass = 2;  // 主调 server pass
+}
+
+// 主调获取授权信息返回结果
+message GetAuthInfoResponse {
+  RetCode  retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg      = 2; // 如果调用失败，该字段可以传出错误原因
+  map<string, ServerAuthInfo> authInfos = 3; // key: 被调server id， value: 授权信息
+}
+
+// 被调获取acl
+message GetACLRequest {
+  string serverId   = 1; // 被调的 server id
+  string serverPass = 2; // 被调的 server pass
+  uint32 version    = 3; // 被调的 ACL version
+}
+
+//Secret key定义
+message SecretKey {
+  string key = 1; //keysecret
+  uint32 version = 2; // 版本号
+  string encryptMethod = 3; // 加密方法
+}
+
+// 被调获取acl返回信息
+message GetACLResponse {
+  RetCode retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string  msg     = 2; // 如果调用失败，该字段可以传出错误原因
+  uint32  version = 3; // 当前最新的服务器ACL版本号
+  repeated Service services = 4; // 被调 service 信息
+  map<string,SecretKey>  secretKeys = 5;     // key:主调id,value:secret key
+}
+
+
+message ACLItem {
+  string callerServerId                  = 1; // 主调server id
+  string callerServerName                = 2; // 废弃
+  string authTime     = 3; // 授权时间
+  string expireTime   = 4; // 失效时间（暂不启用）
+}
+
+// Method定义
+message Method {
+  string    methodId = 1;      // 方法id
+  string    methodName = 2;    // 方法名
+  repeated  ACLItem  acls = 3; // 可以针对Method 粒度授权，前期我们只提供service粒度的授权，method粒度暂不提供
+  bool      isAuth = 4; // 是否开启鉴权，开启：1 关闭：2
+
+}
+
+// Service定义
+message Service {
+  string    serviceId = 1;           // service id
+  string    serviceName = 2;         // service name
+  repeated  Method methodItems = 3;  // 方法，可选, 不支持更新，后续开放method后，单独提供接口
+  repeated  ACLItem acls   = 4;      // acl列表, 针对Service粒度的授权，服务注册的时候无需填写，不支持更新该字段
+  bool      isAuth        = 5;       // 是否开启鉴权，开启：1 关闭：0。默认值：0
+}
+
+// ServerInfo服务信息定义
+message Server {
+  string    serverName  = 1;         // server 名称
+  string    serverId = 2;            // 服务server id，auth center生成，服务注册时无需填写，服务管理员可见
+  string    serverPass = 3;          // 服务server pass，auth center生成，服务注册时无需填写，服务管理员可见
+  string    annotation  = 4;         // 备注信息，最大长度256字节
+  repeated  Service services  = 5;   // service，服务注册时可以不填，后续调用添加接口添加
+  repeated  AuthItem authItems = 6;  // 该server作为主调，拥有哪些被调的授权
+  repeated  string  administrators = 8;   // 服务管理员
+  string    creatTime = 9;          //服务创建时间
+}
+
+// 申请权限条目
+message AuthItem {
+  string    callerServerId = 1;     // 主调server id
+  string    callerServerName = 2;   // 主调server name
+  string    calleeServerId = 3;     // 被调server id
+  string    calleeServerName = 4;   // 被调server name
+  string    calleeServiceId = 5;    // 被调service id
+  string    calleeServiceName = 6;  // 被调service name
+  repeated string calleeMethodId = 7; // 被调方法, 该字段如果不填，代表申请service的权限
+  string expireTime  = 8; // 失效时间（暂不启用）
+}
+
+// 查询操作日志
+message GetOperateLogRequest {
+  string serverId = 1;    // 服务id
+  bool   isVerbose = 2;   // 是否需要操作信息，如果只是查询总数方便分页显示，该字段填false
+  uint32 pageIndex = 3;   // 查询第几页，从1开始。如果无需分页或者查询所有，该字段可以不填，或者填0
+  uint32 numOnePage = 4;  // 每页显示的条目数。如果无需分页或者查询所有，该字段不填，或者填0
+}
+
+// 操作日志
+message OperateLogContent {
+  string serverId = 1;    // 服务id
+  string OperObject = 2;  // 操作对象，例如: server, service
+  string OperType = 3;    // 操作类型，例如： add, delete, update
+  string OperTime = 4;    // 操作时间时间戳
+  string Operate = 5;     // 操作人
+  string content = 6;     // 操作内容
+}
+
+// 查询日志返回
+message GetOperateLogResponse {
+  RetCode  retCode = 1; // 返回码，0表示成功，非0为相应的错误码
+  string   msg     = 2; // 如果调用失败，该字段可以传出错误原因
+  uint32 itemNum = 3;     // 返回条目数
+  repeated OperateLogContent logs = 4; // 返回的日志
+}
+
+//错误码及错误信息
+enum RetCode {
+  // 成功
+  SUCCESS = 0;
+  // 请求参数错误
+  ARG_ERR = 1;
+  // DB里已存在数据
+  DATA_ALREADY_EXIST = 2;
+  // DB里不存在数据
+  DATA_NOT_EXIST = 3;
+  // DB里不存在数据
+  DB_EXCEPTION = 4;
+  // 服务存在引用关系
+  ACL_EXIST = 5;
+  // 被调的ACL没有更新
+  ACL_NOTHING_NEW = 6;
+  // 服务IP不合法
+  CALLER_IP_ILLEGAL = 7;
+  // 内部通用错误
+  INNER_COMMON_ERROR = 8;
+  // 服务密钥校验失败
+  SERVER_PASSWORD_CHECK_FAILED = 9;
+}

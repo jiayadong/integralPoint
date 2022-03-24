@@ -7,12 +7,12 @@ module.exports = {
   /**
    * 项目ID
    */
-  projectId: "qb_prop_conf",
+  projectId: "qb_prop_conf_prod",
 
   /**
    * 分组ID
    */
-  group: "qb_prop_conf",
+  group: "qb_prop_conf_prod",
 
   /**
    * 组件发布地址:local(私有)、public(公共)
